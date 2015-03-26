@@ -8,6 +8,35 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <errno.h>
+#include <unistd.h>
+
+
+/* Following function is a wrapper due missing C11 implementation on OSX and is not my work, but is just a wrapper for missing osx functionality from https://gist.github.com/jbenet/1087739*/
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+#define CLOCK_REALTIME 42
+int clock_gettime(int i,struct timespec *ts) {
+    if (i != 42)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    ts->tv_sec = mts.tv_sec;
+    ts->tv_nsec = mts.tv_nsec;
+    return 0;
+#endif
+    
+}
+/*End of foreign work*/
 
 
 /*! Prints out current hour, minute, second, and 10th of a second as null terminated string into given buffer
@@ -21,8 +50,11 @@ char* display_time (char *time_string)
     
     struct tm tm;
     localtime_r(&t, &tm);
+    struct timespec ts;
     
-    sprintf(time_string,"%d h %d min %d sec\n",tm.tm_hour,tm.tm_min,tm.tm_sec);
+    clock_gettime(CLOCK_REALTIME,&ts);
+    
+    sprintf(time_string,"%d h %d min %d.%.0f sec \n",tm.tm_hour,tm.tm_min,tm.tm_sec,ts.tv_nsec / (float)100000000);
     return time_string;
 }
 
