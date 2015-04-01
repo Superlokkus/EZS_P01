@@ -50,8 +50,11 @@ char* display_time (char *time_string)
     struct tm tm;
     localtime_r(&t, &tm);
     struct timespec ts;
-    
+   #ifdef __MACH__
     clock_gettime(CLOCK_REALTIME,&ts);
+#else
+    timespec_get(&ts, TIME_UTC);
+#endif
     
     sprintf(time_string,"%d h %d min %d.%.0f sec \n",tm.tm_hour,tm.tm_min,tm.tm_sec,ts.tv_nsec / (float)100000000);
     return time_string;
