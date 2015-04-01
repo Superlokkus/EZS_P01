@@ -33,9 +33,8 @@ int clock_gettime(int i,struct timespec *ts) {
     ts->tv_sec = mts.tv_sec;
     ts->tv_nsec = mts.tv_nsec;
     return 0;
+    }
 #endif
-    
-}
 /*End of foreign work*/
 
 
