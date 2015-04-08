@@ -65,18 +65,28 @@ char* display_time (char *time_string)
     return time_string;
 }
 
+void set_My_Timer(unsigned set, unsigned reset)
+{
+    const struct itimerval itimerval = {{set,0},{reset,0}};
+    
+    if (setitimer(ITIMER_REAL, &itimerval, NULL) != 0) {
+        perror("Cannot set timer");
+    }
+}
+
 void my_beep(int i)
 {
     assert(i == SIGALRM);
     static int count = 0;
     count++;
-    fprintf(stderr,"%d. Sekunde\n",count);
+    set_My_Timer(0, count+1);
+    fprintf(stderr,"%d. Signal\n",count);
 //    beep(); Linking Problems OSX
 //    flash();
     const int max = 5;
     if (count == max)
     {
-        fprintf(stderr, "%d. Sekunde erreicht, beende.\n",max);
+        fprintf(stderr, "%d. Signal erreicht, beende.\n",max);
         exit(EXIT_SUCCESS);
     }
 }
@@ -87,11 +97,8 @@ int main(int argc, const char * argv[]) {
     {
         perror("Cannot set alarm handler");
     }
-    struct itimerval itimerval = {{1,0},{1,0}};
-    
-    if (setitimer(ITIMER_REAL, &itimerval, NULL) != 0) {
-        perror("Cannot set timer");
-    }
+
+    set_My_Timer(0, 1);
     
     char output[64];
     
