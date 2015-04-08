@@ -7,9 +7,14 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
+#include <ncurses.h>
+#include <assert.h>
 
 
 /* Following function is a wrapper due missing C11 implementation on OSX and is not my work, but is just a wrapper for missing osx functionality from https://gist.github.com/jbenet/1087739*/
@@ -60,12 +65,39 @@ char* display_time (char *time_string)
     return time_string;
 }
 
+void my_beep(int i)
+{
+    assert(i == SIGALRM);
+    static int count = 0;
+    count++;
+    fprintf(stderr,"%d. Sekunde\n",count);
+//    beep(); Linking Problems OSX
+//    flash();
+    const int max = 5;
+    if (count == max)
+    {
+        fprintf(stderr, "%d. Sekunde erreicht, beende.\n",max);
+        exit(EXIT_SUCCESS);
+    }
+}
+
 int main(int argc, const char * argv[]) {
+    
+    if (signal(SIGALRM, my_beep) == SIG_ERR)
+    {
+        perror("Cannot set alarm handler");
+    }
+    struct itimerval itimerval = {{1,0},{1,0}};
+    
+    if (setitimer(ITIMER_REAL, &itimerval, NULL) != 0) {
+        perror("Cannot set timer");
+    }
     
     char output[64];
     
     while (1) {
         printf("%s",display_time(output));
+        sleep(1);
     }
     
     return 0;
